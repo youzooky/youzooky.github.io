@@ -31,14 +31,22 @@ body { -ms-content-zooming:none;}
 	line-height: 1.2;
 ">
 
-<br><br>
-
 <center>
-<canvas style="width:400px; height:600px;" id="c1"></canvas><br>
-</center>
-<br>
+<canvas style="
+	width:400px;
+	height:600px;
 
-Excuse me<br>
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+
+	-webkit-tap-highlight-color:rgba( 0,0,0,0);
+
+	-ms-touch-action:none;
+	touch-action:none;
+" id="c1"></canvas><br>
+</center>
 
 <script src="skeleton_touch.js"></script>
 
