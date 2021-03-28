@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html lang="ja" manifest="game.appcache" style="
+	height: 100%;
+	user-select: none;
+	-webkit-user-select: none;
+">
+
+<head>
+
+<meta charset="utf-8">
+
+<title>コインゲット</title>
+
+<link rel="apple-touch-icon-precomposed" href="icon.png" />
+
+<!-- ★ iOS や Android 用 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=420, user-scalable=no">
+
+<!-- ★ Windows 用 -->
+<style>
+@-ms-viewport { width:420px;}
+body { -ms-content-zooming:none;}
+</style>
+
+</head>
+
+<body style="
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: #333333;
+
+	font-family: 'Rounded Mplus 1c', sans-serif;
+	font-size: 30px;
+	font-weight: 500;
+	color: #000000;
+	line-height: 1.2;
+	text-align: center;
+">
+
+<canvas style="
+	width:400px;
+	height:600px;
+
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+
+	-webkit-tap-highlight-color:rgba( 0,0,0,0);
+
+	-ms-touch-action:none;
+	touch-action:none;
+" id="c1"></canvas><br>
+
+<script src="skeleton_touch.js"></script>
+
+<script>
+
+//var a, b, c; //変数を用意する。
+//
+//a = 100; //変数に代入する。
+//b = 7;
+//c = a + 3 * b;
+//
+
+
+var skt;
+
+var can, ctx; //変数を宣言する。
+
+can = document.getElementById("c1");
+can.width = 400;
+can.height = 600;
+ctx = can.getContext("2d");
+
+var MAXTOUCH = 5;
+var CAN_PINCH = false;
+var REFW = 400, REFH = 600;
+
+skt = new skeleton_touch( can);
+skt.set_mag_and_orientation( 1, 0);
+
+//●●●●●●●●●●
+
+
+var img_cow,img_coin;
+var bx, by, bvx, bvy;
+var rx;
+var sc;
+
+sc=0;
+
+img_cow = new Image();
+img_cow.src = "cow.jpg"
+
+rx = 200;
+
+img_coin = new Image();
+img_coin.src = "coin.jpg"
+px = 50;
+py = 50;
+
+var scene;
+var count;
+
+scene = 0;
+count = 0;
+tic();
+
+function tic(){
+	var i;
+
+	requestAnimationFrame( tic);
+
+	skt.pre();
+
+	//●●●●●●●●●●
+
+	switch( scene){
+	case 0: //● タイトル画面。
+		if( skt.start){
+			scene=1;
+			bx = 200;
+			by = 50;
+			bvx = 0;
+			bvy = 7;
+		}
+		ctx.fillStyle="#000000";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		ctx.fillStyle="#ff0000";
+		ctx.font="60px 'Arial";
+		ctx.fillText( "コインゲット ", 20, 290);
+		ctx.font="30px 'Arial";
+		ctx.fillText( "タッチでスタート ", 70, 350);
+		break;
+
+	case 1:
+		ctx.fillStyle="#ffffff";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		ctx.fillStyle="#00ff00";
+		ctx.fillRect( 0, 500, 400, 100);
+
+		ctx.fillStyle="#ffff00";
+		for( i = 0; i < 10; i++){
+			ctx.fillRect( 10 + i * 40, 540-( i%2)*20, 20, 20);
+		}
+
+		//ctx.drawImage( img_cow, bx, by, 100, 100);
+		draw_ball( bx, by);
+
+		ctx.drawImage( img_coin, px, py, 50, 50);
+
+		//if( skt.on) rx = skt.x;
+		rx = skt.x;
+
+		ctx.fillStyle="#00ffff";
+		ctx.fillRect( rx-50, 450, 100, 10);
+
+		bx = bx + bvx;
+		if(bx>400){
+			bx=400;
+			bvx=-bvx;
+		}
+		if(bx<0){
+			bx=0;
+			bvx=-bvx;
+		}
+		by = by + bvy;
+		if(by>445 &&by<455){
+			if(bx>rx-50 &&bx<rx+50 ){
+				by=445;
+				bvy=-bvy;
+				if( bx - rx < -30) bvx=-10;
+				else if( bx - rx < -10) bvx=-5;
+				else if( bx - rx < 10) bvx=0;
+				else if( bx - rx < 30) bvx=5;
+				else bvx=10;
+			}
+		}
+		if(by<0){
+			by=0;
+			bvy=-bvy;
+		}
+		if(by>600)scene=2;
+
+		ctx.fillStyle="#ff0000";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "score " + sc, 10, 590);
+
+		break;
+	case 2:
+		if(skt.start)scene=0;
+		ctx.fillStyle="#ff0000";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		ctx.fillStyle="#000000";
+		ctx.font="55px 'Arial";
+		ctx.fillText( "ゲームオーバー ", 20, 290);
+		break;
+	}
+
+	skt.post();
+
+	count++;
+}
+
+function draw_ball( x, y){
+	ctx.drawImage( img_cow, x-25, y-25, 50, 50);
+}
+
+</script>
+
+
+</body>
+
+</html>
