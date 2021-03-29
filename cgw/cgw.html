@@ -92,8 +92,6 @@ var bx, by, bvx, bvy;
 var rx;
 var sc;
 
-sc=0;
-
 img_cow = new Image();
 img_cow.src = "cow.jpg"
 
@@ -101,8 +99,8 @@ rx = 200;
 
 img_coin = new Image();
 img_coin.src = "coin.jpg"
-px = 50;
-py = 50;
+
+var p = new Array( 100);
 
 var scene;
 var count;
@@ -110,6 +108,8 @@ var count;
 scene = 0;
 count = 0;
 tic();
+
+var i;
 
 function tic(){
 	var i;
@@ -128,6 +128,12 @@ function tic(){
 			by = 50;
 			bvx = 0;
 			bvy = 7;
+			for( i = 0; i < 100; i++){
+				p[ i] =10;
+			}
+			p[ 33] = 100;
+			p[ 35] = 0;
+			sc = 0;
 		}
 		ctx.fillStyle="#000000";
 		ctx.fillRect( 0, 0, 400, 600);
@@ -151,10 +157,23 @@ function tic(){
 			ctx.fillRect( 10 + i * 40, 540-( i%2)*20, 20, 20);
 		}
 
-		//ctx.drawImage( img_cow, bx, by, 100, 100);
-		draw_ball( bx, by);
+		//● コインを描画。
+		for( i = 0; i < 100; i++){
+			if( p[ i] > 0){
+				var r;
 
-		ctx.drawImage( img_coin, px, py, 50, 50);
+				r = 7 + 0.3 * p[ i];
+				ctx.drawImage( img_coin,
+					20 + 40 * ( i % 10) - r,
+					20 + 40 * Math.floor( i / 10) - r,
+					2 * r,
+					2 * r
+				);
+			}
+		}
+
+		//● ボールを描画。
+		draw_ball( bx, by);
 
 		//if( skt.on) rx = skt.x;
 		rx = skt.x;
@@ -171,23 +190,49 @@ function tic(){
 			bx=0;
 			bvx=-bvx;
 		}
-		by = by + bvy;
-		if(by>445 &&by<455){
-			if(bx>rx-50 &&bx<rx+50 ){
-				by=445;
+
+		var n; //● マス番号。
+		n = Math.floor( bx / 40) + 10 * Math.floor( by / 40);
+		if( 0 < p[ n]){
+			//● ゲット。
+			sc = sc + p[ n];
+			p[ n] = 0;
+		}
+
+		//● ラケットとの当たり判定。
+		//by = by + bvy;
+		//if(by>445 &&by<455){
+		//	if(bx>rx-50 &&bx<rx+50 ){
+		//		by=445;
+		//		bvy=-bvy;
+		//		if( bx - rx < -30) bvx=-10;
+		//		else if( bx - rx < -10) bvx=-5;
+		//		else if( bx - rx < 10) bvx=0;
+		//		else if( bx - rx < 30) bvx=5;
+		//		else bvx=10;
+		//	}
+		//}
+
+by = by + bvy;
+
+		if(by>455&&by-bvy <=455){
+			var t;
+			t=(bx-rx)/50;
+			if( -1 <= t && t <= 1){
+				//● 当たった。
+				by=455;
+				bvx=5*t;
 				bvy=-bvy;
-				if( bx - rx < -30) bvx=-10;
-				else if( bx - rx < -10) bvx=-5;
-				else if( bx - rx < 10) bvx=0;
-				else if( bx - rx < 30) bvx=5;
-				else bvx=10;
 			}
 		}
-		if(by<0){
+
+		if( by < 0){
+			//● 天井ではねかえる。
 			by=0;
 			bvy=-bvy;
 		}
-		if(by>600)scene=2;
+
+		if( by > 600) scene = 2;
 
 		ctx.fillStyle="#ff0000";
 		ctx.font="30px 'Arial";
