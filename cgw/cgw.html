@@ -56,6 +56,7 @@ body { -ms-content-zooming:none;}
 	touch-action:none;
 " id="c1"></canvas><br>
 
+<script src="skeleton_audio.js"></script>
 <script src="skeleton_touch.js"></script>
 
 <script>
@@ -66,9 +67,6 @@ body { -ms-content-zooming:none;}
 //b = 7;
 //c = a + 3 * b;
 //
-
-
-var skt;
 
 var can, ctx; //変数を宣言する。
 
@@ -81,8 +79,26 @@ var MAXTOUCH = 5;
 var CAN_PINCH = false;
 var REFW = 400, REFH = 600;
 
+var ska;
+var skt;
+
+var AUDIONUM = 4;
+ska = new skeleton_audio();
+ska.load( "audio/se_block_coin.mp3");
+ska.load( "audio/bgm_power.mp3");
+ska.load( "audio/se_coin_2.mp3");
+ska.load( "audio/se_jump.mp3");
+
 skt = new skeleton_touch( can);
 skt.set_mag_and_orientation( 1, 0);
+function touch_event_hook(){
+	if( skt.num == 1 && skt.x == skt.bx && skt.y == skt.by){
+		//★ シングルタッチでかつ、動いていないタッチに限る。
+		if( !ska.did_ios_start){
+			ska.start_ios();
+		}
+	}
+}
 
 //●●●●●●●●●●
 
@@ -93,12 +109,12 @@ var rx;
 var sc;
 
 img_cow = new Image();
-img_cow.src = "cow.jpg"
+img_cow.src = "image/cow.jpg"
 
 rx = 200;
 
 img_coin = new Image();
-img_coin.src = "coin.jpg"
+img_coin.src = "image/coin.jpg"
 
 var p = new Array( 100);
 
@@ -121,9 +137,23 @@ function tic(){
 	//●●●●●●●●●●
 
 	switch( scene){
-	case 0: //● タイトル画面。
+	case 0: //● ローディング画面。
+
+		ctx.fillStyle="#0000ff";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		if( ska.loaded_count == 4) scene = 1;
+
+		break;
+
+	case 1: //● タイトル画面。
+
 		if( skt.start){
-			scene=1;
+			//● タッチされたので、ゲーム中画面へ。
+			ska.play_loop( 1);
+
+			scene = 2;
+
 			bx = 200;
 			by = 50;
 			bvx = 0;
@@ -145,13 +175,17 @@ function tic(){
 		ctx.fillText( "タッチでスタート ", 70, 350);
 		break;
 
-	case 1:
+	case 2: //● ゲーム中画面。
+
+		//● 背景を白でぬりつぶす。
 		ctx.fillStyle="#ffffff";
 		ctx.fillRect( 0, 0, 400, 600);
 
+		//● 地面を緑で描画。
 		ctx.fillStyle="#00ff00";
 		ctx.fillRect( 0, 500, 400, 100);
 
+		//● 花を黄色で描画。
 		ctx.fillStyle="#ffff00";
 		for( i = 0; i < 10; i++){
 			ctx.fillRect( 10 + i * 40, 540-( i%2)*20, 20, 20);
@@ -175,51 +209,48 @@ function tic(){
 		//● ボールを描画。
 		draw_ball( bx, by);
 
-		//if( skt.on) rx = skt.x;
+		//● ラケットの座標を更新。
 		rx = skt.x;
 
+		//● ラケットを水色で描画。
 		ctx.fillStyle="#00ffff";
 		ctx.fillRect( rx-50, 450, 100, 10);
 
+		//● ボールの座標を更新。
 		bx = bx + bvx;
-		if(bx>400){
+		if( 400 < bx){
+			//● 右の壁ではねかえる。
 			bx=400;
 			bvx=-bvx;
+			ska.play(3);
 		}
-		if(bx<0){
+		if( bx < 0){
+			//● 左の壁ではねかえる。
 			bx=0;
 			bvx=-bvx;
+			ska.play(3);
 		}
 
-		var n; //● マス番号。
+		var n; //● ← マス番号。
 		n = Math.floor( bx / 40) + 10 * Math.floor( by / 40);
 		if( 0 < p[ n]){
-			//● ゲット。
+			//● ゲットした。
 			sc = sc + p[ n];
 			p[ n] = 0;
+			ska.play(2);
 		}
 
+		//● ボールの座標を更新。
+		by = by + bvy;
+
 		//● ラケットとの当たり判定。
-		//by = by + bvy;
-		//if(by>445 &&by<455){
-		//	if(bx>rx-50 &&bx<rx+50 ){
-		//		by=445;
-		//		bvy=-bvy;
-		//		if( bx - rx < -30) bvx=-10;
-		//		else if( bx - rx < -10) bvx=-5;
-		//		else if( bx - rx < 10) bvx=0;
-		//		else if( bx - rx < 30) bvx=5;
-		//		else bvx=10;
-		//	}
-		//}
-
-by = by + bvy;
-
-		if(by>455&&by-bvy <=455){
+		if( by > 455 && by - bvy <= 455){
 			var t;
-			t=(bx-rx)/50;
+			t = ( bx - rx) / 50;
 			if( -1 <= t && t <= 1){
 				//● 当たった。
+				ska.play( 0);
+
 				by=455;
 				bvx=5*t;
 				bvy=-bvy;
@@ -232,18 +263,26 @@ by = by + bvy;
 			bvy=-bvy;
 		}
 
-		if( by > 600) scene = 2;
-
+		if( by > 600) {
+			scene = 3; //● ボールが落ちたので、ゲームオーバー画面へ。
+			ska.stop(1);
+		}
+		//● スコアを描画。
 		ctx.fillStyle="#ff0000";
 		ctx.font="30px 'Arial";
 		ctx.fillText( "score " + sc, 10, 590);
 
 		break;
-	case 2:
-		if(skt.start)scene=0;
+
+	case 3: //● ゲームオーバー画面。
+
+		if( skt.start) scene = 1; //● タッチされたので、タイトル画面へ。
+
+		//● 背景を赤で塗りつぶす。
 		ctx.fillStyle="#ff0000";
 		ctx.fillRect( 0, 0, 400, 600);
 
+		//● 黒で「ゲームオーバー」と書く。
 		ctx.fillStyle="#000000";
 		ctx.font="55px 'Arial";
 		ctx.fillText( "ゲームオーバー ", 20, 290);

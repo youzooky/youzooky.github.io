@@ -2,9 +2,14 @@ CACHE MANIFEST
 # 2021-3-13
 
 CACHE:
-cow.jpg
-coin.jpg
+audio/bgm_power.mp3
+audio/se_block_coin.mp3
+audio/se_coin_2.mp3
+audio/se_jump.mp3
+image/cow.jpg
+image/coin.jpg
 skeleton_touch.js
+skeleton_audio.js
 
 NETWORK:
 *
