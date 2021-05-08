@@ -6,8 +6,15 @@ audio/bgm_power.mp3
 audio/se_block_coin.mp3
 audio/se_coin_2.mp3
 audio/se_jump.mp3
-image/cow.jpg
-image/coin.jpg
+
+image/bg_title.png
+image/bg_game.png
+image/bg_game_over.png
+image/ball.png
+image/racket.png
+image/point.png
+image/bonus.png
+
 skeleton_touch.js
 skeleton_audio.js
 
