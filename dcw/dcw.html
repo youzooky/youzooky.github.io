@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html lang="ja" manifest="game.appcache" style="
+	height: 100%;
+	user-select: none;
+	-webkit-user-select: none;
+">
+
+<head>
+
+<meta charset="utf-8">
+
+<title>どんぐりキャッチ</title>
+
+<link rel="apple-touch-icon-precomposed" href="icon_dcw.png" />
+
+<!-- ★ iOS や Android 用 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=420, user-scalable=no">
+
+<!-- ★ Windows 用 -->
+<style>
+@-ms-viewport { width:420px;}
+body { -ms-content-zooming:none;}
+</style>
+
+</head>
+
+<body style="
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: #333333;
+
+	font-family: 'Rounded Mplus 1c', sans-serif;
+	font-size: 30px;
+	font-weight: 500;
+	color: #000000;
+	line-height: 1.2;
+	text-align: center;
+">
+
+<canvas style="
+	width:400px;
+	height:600px;
+
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+
+	-webkit-tap-highlight-color:rgba( 0,0,0,0);
+
+	-ms-touch-action:none;
+	touch-action:none;
+" id="c1"></canvas><br>
+
+<script src="skeleton_audio.js"></script>
+<script src="skeleton_touch.js"></script>
+
+<script>
+
+//var a, b, c; //変数を用意する。
+//
+//a = 100; //変数に代入する。
+//b = 7;
+//c = a + 3 * b;
+//
+
+var can, ctx; //変数を宣言する。
+
+can = document.getElementById("c1");
+can.width = 400;
+can.height = 600;
+ctx = can.getContext("2d");
+
+var MAXTOUCH = 5;
+var CAN_PINCH = false;
+var REFW = 400, REFH = 600;
+
+var ska;
+var skt;
+
+var AUDIONUM = 6;
+ska = new skeleton_audio();
+
+var bgm_game = ska.load( "audio/bgm_game.mp3");
+
+var se_touch = ska.load( "audio/se_touch.mp3");
+var se_hit = ska.load( "audio/se_hit.mp3");
+var se_nuts = ska.load( "audio/se_nuts.mp3");
+var se_bonus = ska.load( "audio/se_bonus.mp3");
+var se_wall = ska.load( "audio/se_wall.mp3");
+
+skt = new skeleton_touch( can);
+skt.set_mag_and_orientation( 1, 0);
+function touch_event_hook(){
+	if( skt.num == 1 && skt.x == skt.bx && skt.y == skt.by){
+		//★ シングルタッチでかつ、動いていないタッチに限る。
+		if( !ska.did_ios_start){
+			ska.start_ios();
+		}
+	}
+}
+
+//●●●●●●●●●●
+
+var img_bg_title, img_bg_game, img_bg_game_over;
+var img_ball, img_point, img_bonus, img_racket;
+var bx, by, bvx, bvy;
+var rx;
+var sc;
+var nuts_num;
+
+img_bg_title = new Image();
+img_bg_title.src = "image/bg_title.png"
+
+img_bg_game = new Image();
+img_bg_game.src = "image/bg_game.png"
+
+img_bg_game_over = new Image();
+img_bg_game_over.src = "image/bg_game_over.png"
+
+img_ball = new Image();
+img_ball.src = "image/ball.png"
+
+img_point = new Image();
+img_point.src = "image/point.png"
+
+img_bonus = new Image();
+img_bonus.src = "image/bonus.png"
+
+img_racket = new Image();
+img_racket.src = "image/racket.png"
+
+var p = new Array( 100);
+
+var scene;
+var count;
+
+scene = 0;
+count = 0;
+tic();
+
+var i;
+
+function tic(){
+	var i;
+
+	requestAnimationFrame( tic);
+
+	skt.pre();
+
+	//●●●●●●●●●●
+
+	switch( scene){
+	case 0: //● ローディング画面。
+
+		ctx.fillStyle="#0000ff";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		if( ska.loaded_count == 6) scene = 1;
+
+		break;
+
+	case 1: //● タイトル画面。
+
+		if( skt.start){
+			//● タッチされたので、ゲーム中画面へ。
+			ska.play_loop( bgm_game);
+			ska.play( se_touch);
+
+			scene = 2;
+			rx = 200;
+			bx = 200;
+			by = 50;
+			bvx = 3;
+			bvy = 5;
+			for( i = 0; i < 100; i++){
+				p[ i] =10;
+			}
+
+			for( i = 0; i < 5; i++){
+				p[ Math.floor( 100 * Math.random())] = 100;
+			}
+			nuts_num=100;
+			sc = 0;
+		}
+		ctx.drawImage( img_bg_title, 0, 0);
+		
+		ctx.fillStyle="#ffffff";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "タッチでスタート ", 80, 590);
+		break;
+
+	case 2: //● ゲーム中画面。
+
+		ctx.drawImage( img_bg_game, 0, 0);
+
+		//● コインを描画。
+		for( i = 0; i < 100; i++){
+			if( p[ i] > 0){
+				//var r;
+				var x, y;
+
+				//r = 7 + 0.3 * p[ i];
+				//ctx.drawImage( img_point,
+					//20 + 40 * ( i % 10) - r,
+					//20 + 40 * Math.floor( i / 10) - r,
+					//2 * r,
+					//2 * r
+				//);
+				x = 20 + 40 * ( i % 10);
+				y = 20 + 40 * Math.floor( i / 10);
+				if ( p[ i]== 10){
+					ctx.drawImage( img_point, x -15, y -15);
+				} else{
+					ctx.drawImage( img_bonus, x -30, y -30);
+				}
+			}
+		}
+
+		//● ボールを描画。
+		draw_ball( bx, by);
+
+		//● ラケットの座標を更新。
+		rx = skt.x;
+
+		//● ラケットを水色で描画。
+		ctx.drawImage( img_racket, rx-50, 440);
+
+		//● ボールの座標を更新。
+		bx = bx + bvx;
+		if( 399 < bx){
+			//● 右の壁ではねかえる。
+			bx=399;
+			bvx=-bvx;
+			ska.play( se_wall);
+		}
+		if( bx < 0){
+			//● 左の壁ではねかえる。
+			bx=0;
+			bvx=-bvx;
+			ska.play( se_wall);
+		}
+
+		var n; //● ← マス番号。
+		n = Math.floor( bx / 40) + 10 * Math.floor( by / 40);
+		if( 0 < p[ n]){
+			//● ゲットした。
+			sc = sc + p[ n];
+			if( p[ n]>10) ska.play( se_bonus);
+			else ska.play( se_nuts);
+			p[ n] = 0;
+			nuts_num--;
+			if( nuts_num==0){
+				for( i = 0; i < 100; i++){
+					p[ i] =10;
+				}
+
+				for( i = 0; i < 5; i++){
+					p[ Math.floor( 100 * Math.random())] = 100;
+				}
+				nuts_num=100;
+				if( bvys > 0)bvy++; else bvy--;
+			}
+		}
+
+		//● ボールの座標を更新。
+		by = by + bvy;
+
+		//● ラケットとの当たり判定。
+		if( by > 455 && by - bvy <= 455){
+			var t;
+			t = ( bx - rx) / 50;
+			if( -1 <= t && t <= 1){
+				//● 当たった。
+				ska.play( se_hit);
+
+				by=455;
+				bvx=5*t;
+				bvy=-bvy;
+			}
+		}
+
+		if( by < 0){
+			//● 天井ではねかえる。
+			by=0;
+			bvy=-bvy;
+			ska.play( se_wall);
+		}
+
+		if( by > 600) {
+			scene = 3; //● ボールが落ちたので、ゲームオーバー画面へ。
+			ska.stop( bgm_game);
+		}
+		//● スコアを描画。
+		ctx.fillStyle="#ffffff";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "score " + sc, 10, 590);
+
+		break;
+
+	case 3: //● ゲームオーバー画面。
+
+		if( skt.start) {
+			scene = 1; //● タッチされたので、タイトル画面へ。
+			ska.play( se_touch);
+		}
+		ctx.drawImage( img_bg_game_over, 0, 0);
+
+		//● スコアを描画。
+		ctx.fillStyle="#ffffff";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "scoreは" + sc + "でした。", 80, 550);
+		break;
+	}
+
+	skt.post();
+
+	count++;
+}
+
+function draw_ball( x, y){
+	ctx.drawImage( img_ball, x-25, y-25, 50, 50);
+}
+
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,24 @@
+CACHE MANIFEST
+# 2021-5-15
+
+CACHE:
+audio/bgm_game.mp3
+audio/se_nuts.mp3
+audio/se_touch.mp3
+audio/se_hit.mp3
+audio/se_bonus.mp3
+audio/se_wall.mp3
+
+image/bg_title.png
+image/bg_game.png
+image/bg_game_over.png
+image/ball.png
+image/racket.png
+image/point.png
+image/bonus.png
+
+skeleton_touch.js
+skeleton_audio.js
+
+NETWORK:
+*
