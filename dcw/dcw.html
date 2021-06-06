@@ -110,7 +110,7 @@ var img_bg_title, img_bg_game, img_bg_game_over;
 var img_ball, img_point, img_bonus, img_racket;
 var bx, by, bvx, bvy;
 var rx;
-var sc;
+var sc, stage;
 var nuts_num;
 
 img_bg_title = new Image();
@@ -157,7 +157,7 @@ function tic(){
 	switch( scene){
 	case 0: //● ローディング画面。
 
-		ctx.fillStyle="#0000ff";
+		ctx.fillStyle="#000000";
 		ctx.fillRect( 0, 0, 400, 600);
 
 		if( ska.loaded_count == 6) scene = 1;
@@ -177,21 +177,25 @@ function tic(){
 			by = 50;
 			bvx = 3;
 			bvy = 5;
-			for( i = 0; i < 100; i++){
+			for( i = 0; i < 10; i++){
 				p[ i] =10;
+			}
+			for( i = 10; i < 100; i++){
+				p[ i] =0;
 			}
 
 			for( i = 0; i < 5; i++){
-				p[ Math.floor( 100 * Math.random())] = 100;
+				p[ 10 + Math.floor( 90 * Math.random())] = 100;
 			}
-			nuts_num=100;
+			nuts_num=15;
 			sc = 0;
+			stage = 1;
 		}
 		ctx.drawImage( img_bg_title, 0, 0);
 		
 		ctx.fillStyle="#ffffff";
 		ctx.font="30px 'Arial";
-		ctx.fillText( "タッチでスタート ", 80, 590);
+		if ( ( count % 30) < 20)ctx.fillText( "タッチでスタート ", 80, 590);
 		break;
 
 	case 2: //● ゲーム中画面。
@@ -255,15 +259,16 @@ function tic(){
 			p[ n] = 0;
 			nuts_num--;
 			if( nuts_num==0){
+				//● 全部ゲットしたので、次のステージへ。
 				for( i = 0; i < 100; i++){
 					p[ i] =10;
 				}
-
+				stage++;
 				for( i = 0; i < 5; i++){
 					p[ Math.floor( 100 * Math.random())] = 100;
 				}
 				nuts_num=100;
-				if( bvys > 0)bvy++; else bvy--;
+				if( bvy > 0)bvy++; else bvy--;
 			}
 		}
 
@@ -298,7 +303,7 @@ function tic(){
 		//● スコアを描画。
 		ctx.fillStyle="#ffffff";
 		ctx.font="30px 'Arial";
-		ctx.fillText( "score " + sc, 10, 590);
+		ctx.fillText( "score " + sc + "      stage" + stage, 10, 590);
 
 		break;
 
