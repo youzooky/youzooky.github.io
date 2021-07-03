@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="ja" style="
+	height: 100%;
+	user-select: none;
+	-webkit-user-select: none;
+">
+
+<head>
+
+<meta charset="utf-8">
+
+<title>スーパーりすくん</title>
+
+<!-- ★ iOS や Android 用 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=420, user-scalable=no">
+
+<!-- ★ Windows 用 -->
+<style>
+@-ms-viewport { width:420px;}
+body { -ms-content-zooming:none;}
+</style>
+
+</head>
+
+<body style="
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: #ffffcc;
+
+	font-family: 'Rounded Mplus 1c', sans-serif;
+	font-size: 30px;
+	font-weight: 500;
+	color: #000000;
+	line-height: 1.2;
+	text-align: center;
+">
+
+<canvas style="
+	width:400px;
+	height:600px;
+
+	user-select:none;
+	-moz-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+
+	-webkit-tap-highlight-color:rgba( 0,0,0,0);
+
+	-ms-touch-action:none;
+	touch-action:none;
+" id="c1"></canvas><br>
+
+<script src="skeleton_audio.js"></script>
+<script src="skeleton_touch.js"></script>
+
+<script>
+
+var can, ctx;
+
+can = document.getElementById("c1");
+can.width = 400;
+can.height = 600;
+ctx = can.getContext("2d");
+
+var MAXTOUCH = 5;
+var CAN_PINCH = false;
+var REFW = 400, REFH = 600;
+
+var ska;
+var skt;
+
+var AUDIONUM = 6;
+ska = new skeleton_audio();
+
+var bgm_game = ska.load( "audio/bgm_game.mp3");
+
+var se_touch = ska.load( "audio/se_touch.mp3");
+var se_hit = ska.load( "audio/se_hit.mp3");
+var se_nuts = ska.load( "audio/se_nuts.mp3");
+var se_bonus = ska.load( "audio/se_bonus.mp3");
+var se_wall = ska.load( "audio/se_wall.mp3");
+
+skt = new skeleton_touch( can);
+skt.set_mag_and_orientation( 1, 0);
+function touch_event_hook(){
+	if( skt.num == 1 && skt.x == skt.bx && skt.y == skt.by){
+		//★ シングルタッチでかつ、動いていないタッチに限る。
+		if( !ska.did_ios_start){
+			ska.start_ios();
+		}
+	}
+}
+
+//●●●●●●●●●●
+
+var img_bg;
+var img_risu, img_donguri;
+
+img_bg = new Image();
+img_bg.src = "image/bg.png"
+
+img_risu = new Image();
+img_risu.src = "image/risu.png"
+
+img_donguri = new Image();
+img_donguri.src = "image/donguri.png"
+
+var scene;
+var count;
+var score;
+
+var rx, ry;
+
+const MAXDON = 30;
+var dx = new Array( MAXDON);
+var dy = new Array( MAXDON);
+
+scene = 0;
+count = 0;
+
+tic();
+
+function tic(){
+
+	var i;
+
+	requestAnimationFrame( tic);
+
+	skt.pre();
+
+	//●●●●●●●●●●
+
+	switch( scene){
+	case 0: //● ローディング画面。
+
+		ctx.fillStyle="#000000";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		if( ska.loaded_count == 6) scene = 1;
+
+		break;
+
+	case 1: //● タイトル画面。
+
+		ctx.drawImage( img_bg, 0, 0);
+
+		ctx.fillStyle="#000000";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "スーパーりすくん", 80, 315);
+
+		if( skt.start){
+			scene = 2;
+			score = 0;
+			ska.play_loop( bgm_game);
+			ska.play( se_touch);
+			rx = 200;
+			ry = 400;
+
+			for( i = 0; i < MAXDON; i++){
+				dx[ i] = Math.random() * 400;
+				dy[ i] = 0;
+			}
+		}
+		break;
+
+	case 2: //● ゲーム中画面。
+
+		ctx.drawImage( img_bg, 0, 0);
+
+		if( skt.on) rx = rx + 5; else rx = rx -5;
+		if( rx < 0 || rx >= 400) {
+			scene = 3;
+			ska.stop( bgm_game);
+		}
+
+		for( i = 0; i < MAXDON; i++){
+			dy[ i] = dy[ i] + 7;
+			if ( dy[ i] >= 600){
+				dy[ i] = 0;
+				dx[ i] = Math.random() * 400;
+			}
+
+			if( -40 < dx[ i] - rx && dx[ i] - rx < 40 &&
+				-40 < dy[ i] - ry && dy[ i] - ry < 40
+			){
+				dy[ i] = 0;
+				dx[ i] = Math.random() * 400;
+				score = score + 10;
+				ska.play( se_nuts);
+			}
+		}
+
+		ctx.drawImage( img_risu, rx - 25, ry - 25);
+
+		for( i = 0; i < MAXDON; i++){
+			ctx.drawImage( img_donguri, dx[ i] - 15, dy[ i] - 15);
+		}
+
+		ctx.fillStyle="#00ffff";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "スコア" + score, 10, 590);
+
+		break;
+	case 3: //● ゲームオーバー。
+
+		ctx.fillStyle="#000000";
+		ctx.fillRect( 0, 0, 400, 600);
+
+		ctx.fillStyle="#ff0000";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "ゲームオーバー", 95, 315);
+
+		ctx.fillStyle="#ff0000";
+		ctx.font="30px 'Arial";
+		ctx.fillText( "スコアは" + score + "点でした。", 35, 430);
+
+		if( skt.start) {
+			scene = 1;
+			ska.play( se_touch);
+		}
+
+		break;
+
+	}
+
+	//●●●●●●●●●●
+
+	skt.post();
+
+	count++;
+}
+
+</script>
+
+</body>
+
+</html>
